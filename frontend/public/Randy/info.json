@@ -1,0 +1,12 @@
+{
+    "user": {
+      "username": "Bob",
+      "profileImage": "https://i.pinimg.com/236x/d3/33/28/d33328f1b145b398d88bdedbbcf741ed.jpg",
+      "socialLink": "@bob"
+    },
+    "topic": "pokemons",
+    "names": [
+              "bulbasaur",
+              "charmander"
+        ]
+}
