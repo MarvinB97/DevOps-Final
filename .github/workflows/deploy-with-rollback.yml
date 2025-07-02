@@ -1,0 +1,83 @@
+name: Deploy with Auto Rollback
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Kind
+      uses: helm/kind-action@v1
+      with:
+        node_image: kindest/node:v1.28.0
+        
+    - name: Deploy shared resources
+      run: |
+        kubectl apply -f kubernetes/shared/
+        echo "✅ Recursos compartidos desplegados"
+        
+    - name: Deploy Blue version
+      run: |
+        kubectl apply -f kubernetes/blue/
+        kubectl rollout status deployment/backend-blue --timeout=300s
+        echo "✅ Versión BLUE desplegada"
+        
+    - name: Deploy Green version
+      run: |
+        kubectl apply -f kubernetes/green/
+        kubectl rollout status deployment/backend-green --timeout=300s
+        echo "✅ Versión GREEN desplegada"
+        
+    - name: Health check before switch
+      run: |
+        echo "🏥 Health check antes del switch..."
+        sleep 30
+        
+        # Verificar que green esté funcionando
+        GREEN_READY=$(kubectl get pods -l app=backend,version=green --no-headers | grep -c "Running")
+        if [ "$GREEN_READY" -eq "0" ]; then
+          echo "❌ GREEN no está listo, haciendo rollback"
+          exit 1
+        fi
+        
+        echo "✅ GREEN está listo para recibir tráfico"
+        
+    - name: Switch traffic to Green
+      run: |
+        # Cambiar el tráfico principal a green
+        kubectl patch ingress backend-ingress -p '{"spec":{"rules":[{"http":{"paths":[{"backend":{"service":{"name":"backend-green-service"}}}]}}]}}'
+        echo "✅ Tráfico cambiado a GREEN"
+        
+    - name: Final health check
+      run: |
+        echo "🏥 Health check final..."
+        sleep 60
+        
+        # Verificar que todo esté funcionando
+        TOTAL_PODS=$(kubectl get pods -l app=backend --no-headers | wc -l)
+        READY_PODS=$(kubectl get pods -l app=backend --no-headers | grep -c "Running")
+        
+        if [ "$READY_PODS" -eq "$TOTAL_PODS" ]; then
+          echo "✅ Despliegue exitoso - Todos los pods están listos"
+        else
+          echo "❌ Despliegue falló - Algunos pods no están listos"
+          exit 1
+        fi
+        
+    - name: Deployment summary
+      run: |
+        echo "📊 Resumen del despliegue:"
+        echo "=========================="
+        kubectl get pods -l app=backend
+        echo ""
+        kubectl get services -l app=backend
+        echo ""
+        kubectl get ingress backend-ingress
