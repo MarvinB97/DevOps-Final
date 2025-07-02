@@ -19,6 +19,6 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: your-docker-username/my-frontend-app:latest
+          image: marv7/devops-final-frontend:blue
           ports:
             - containerPort: 80
