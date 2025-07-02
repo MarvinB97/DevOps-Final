@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-blue
+  labels:
+    app: backend
+    version: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: backend
+        version: blue
+    spec:
+      containers:
+      - name: backend
+        image: tormenask/devops-final-backend:blue
+        ports:
+        - containerPort: 3005
+        env:
+        - name: NODE_ENV
+          value: development
+        - name: DB_HOST
+          value: mysql
+        - name: DB_USER
+          value: root
+        - name: DB_PASSWORD
+          value: "12345"
+        - name: DB_NAME
+          value: pokedex
+        - name: DB_PORT
+          value: "3306"
