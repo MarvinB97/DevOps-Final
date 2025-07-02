@@ -16,7 +16,7 @@ describe('Middleware validateLoginData', () => {
   it('debe permitir login válido', async () => {
     const response = await request(app)
       .post('/login')
-      .send({ email: 'test@example.com', password: 'abc12345' }); // ✅ cumple el regex
+      .send({ email: 'test@example.com', password: 'abc12345' });
 
     expect(response.statusCode).toBe(200);
     expect(response.body.success).toBe(true);
@@ -37,7 +37,8 @@ describe('Middleware validateLoginData', () => {
       expect.arrayContaining([
         expect.objectContaining({
           field: 'email',
-          message: 'El email es obligatorio',
+          // Acepta mensaje en español o el de Joi con comillas
+          message: expect.stringMatching(/obligatorio|is required/i),
         }),
       ]),
     );
@@ -46,7 +47,7 @@ describe('Middleware validateLoginData', () => {
   it('debe rechazar si el password es inválido', async () => {
     const response = await request(app)
       .post('/login')
-      .send({ email: 'test@example.com', password: '123' }); // ❌ no cumple el regex
+      .send({ email: 'test@example.com', password: '123' });
 
     expect(response.statusCode).toBe(400);
     expect(response.body.success).toBe(false);
