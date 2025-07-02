@@ -11,7 +11,8 @@ describe('userSchema', () => {
   it('valida un usuario válido', () => {
     const result = userSchema.validate(validUser);
     expect(result.error).toBeUndefined();
-    expect(result.value).toEqual(validUser);
+    // Ahora espera isActive: true (por default en el schema)
+    expect(result.value).toEqual({ ...validUser, isActive: true });
   });
 
   it('falla si falta el nombre', () => {
@@ -57,5 +58,6 @@ describe('userSchema', () => {
     const { error, value } = userSchema.validate(userWithoutRole);
     expect(error).toBeUndefined();
     expect(value.role).toBe('user');
+    expect(value.isActive).toBe(true);
   });
 });

@@ -1,32 +1,33 @@
-# Etapa 1: Construcción con Node.js
+# Etapa 1: Construcción
 FROM node:18-alpine AS builder
 
-# Establecer el directorio de trabajo
+# Crear y establecer el directorio de trabajo
 WORKDIR /app
 
-# Copiar los archivos necesarios
+# Copiar archivos necesarios para instalar dependencias y construir
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm install
+RUN npm config set registry https://registry.npmjs.org/
+RUN npm config set strict-ssl false
 
-# Copiar el resto del código
+RUN npm ci
+
+# Copiar el resto del código fuente
 COPY . .
 
-# Construir la app
+# Construir la app para producción
 RUN npm run build
 
 # Etapa 2: Servir la app con NGINX
 FROM nginx:stable-alpine
 
-# Copiar archivos compilados desde la etapa builder
+# Copiar archivos de compilación desde la etapa anterior
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copiar la configuración personalizada de NGINX
+# Eliminar la configuración por defecto de nginx y usar una personalizada (opcional)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Exponer el puerto
+# Exponer el puerto que usa nginx
 EXPOSE 80
 
-# Iniciar nginx en primer plano
 CMD ["nginx", "-g", "daemon off;"]
