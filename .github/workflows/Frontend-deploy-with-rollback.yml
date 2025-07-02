@@ -1,0 +1,32 @@
+name: Deploy Frontend with Rollback
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Frontend"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/frontend-deployment frontend-container=${{ secrets.DOCKER_USERNAME }}/devops-final-frontend:latest
+          kubectl rollout status deployment/frontend-deployment
+
+      - name: Rollback if deployment fails
+        if: ${{ failure() }}
+        run: |
+          echo "Deployment failed, rolling back..."
+          kubectl rollout undo deployment/frontend-deployment
