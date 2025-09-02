@@ -6,7 +6,7 @@ metadata:
     app: backend
     version: green
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: backend
@@ -23,34 +23,15 @@ spec:
         ports:
         - containerPort: 3005
         env:
+        - name: NODE_ENV
+          value: development
         - name: DB_HOST
-          value: mysql-service
+          value: mysql
         - name: DB_USER
-          value: "root"
+          value: root
         - name: DB_PASSWORD
           value: "12345"
         - name: DB_NAME
-          value: "pokedex"
-        - name: JWT_SECRET
-          value: "defaultsecretkey"
-        - name: NODE_ENV
-          value: "production"
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3005
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3005
-          initialDelaySeconds: 5
-          periodSeconds: 5 
+          value: pokedex
+        - name: DB_PORT
+          value: "3306"
